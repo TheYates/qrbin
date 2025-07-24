@@ -12,6 +12,8 @@ export interface Link {
   updated_at: string;
   click_count: number;
   is_active: boolean;
+  qr_type?: string;
+  qr_content?: string;
 }
 
 export interface QRCode {
@@ -51,10 +53,10 @@ export async function createLink(
 
 export async function getLinks() {
   const links = await sql`
-    SELECT l.*, 
-           q.foreground_color, 
-           q.background_color, 
-           q.size, 
+    SELECT l.*,
+           q.foreground_color,
+           q.background_color,
+           q.size,
            q.error_correction_level,
            q.logo_url,
            q.logo_size
@@ -146,4 +148,48 @@ function generateShortCode(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+export async function createQRCode(
+  type: string,
+  content: string,
+  title?: string,
+  description?: string
+) {
+  const shortCode = generateShortCode();
+
+  // For non-URL QR codes, we'll store the content directly
+  // For URL QR codes, we'll maintain the original_url field for compatibility
+  const originalUrl = type === "url" ? content : "";
+
+  const [link] = await sql`
+    INSERT INTO links (original_url, short_code, title, description, qr_type, qr_content)
+    VALUES (${originalUrl}, ${shortCode}, ${title}, ${description}, ${type}, ${content})
+    RETURNING *
+  `;
+
+  // Create default QR code configuration
+  await sql`
+    INSERT INTO qr_codes (link_id, foreground_color, background_color, size, error_correction_level)
+    VALUES (${link.id}, '#000000', '#ffffff', 200, 'M')
+  `;
+
+  return link as Link;
+}
+
+export async function getQRCodes() {
+  const qrCodes = await sql`
+    SELECT l.*,
+           q.foreground_color,
+           q.background_color,
+           q.size,
+           q.error_correction_level,
+           q.logo_url,
+           q.logo_size
+    FROM links l
+    LEFT JOIN qr_codes q ON l.id = q.link_id
+    WHERE l.qr_type IS NOT NULL
+    ORDER BY l.created_at DESC
+  `;
+  return qrCodes as (Link & Partial<QRCode>)[];
 }
