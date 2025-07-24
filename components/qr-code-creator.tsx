@@ -667,7 +667,7 @@ function WiFiForm({
         <Checkbox
           id="wifi-hidden"
           checked={hidden}
-          onCheckedChange={setHidden}
+          onCheckedChange={(checked) => setHidden(checked === true)}
         />
         <Label htmlFor="wifi-hidden">Hidden Network</Label>
       </div>

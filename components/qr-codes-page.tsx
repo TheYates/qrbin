@@ -28,6 +28,8 @@ interface Link {
   error_correction_level?: string;
   logo_url?: string;
   logo_size?: number;
+  qr_type?: string;
+  qr_content?: string;
 }
 
 export function QRCodesPage() {
@@ -55,6 +57,15 @@ export function QRCodesPage() {
       return `${window.location.origin}/${shortCode}`;
     }
     return `/${shortCode}`;
+  };
+
+  const getQRContent = (link: Link) => {
+    // If it's a new QR code with specific content, use that
+    if (link.qr_content) {
+      return link.qr_content;
+    }
+    // Otherwise, use the short URL for backward compatibility
+    return getShortUrl(link.short_code);
   };
 
   const downloadQRCode = (shortCode: string) => {
@@ -205,7 +216,7 @@ export function QRCodesPage() {
                 <div className="flex justify-center">
                   <div data-short-code={link.short_code}>
                     <QRCodeGenerator
-                      value={getShortUrl(link.short_code)}
+                      value={getQRContent(link)}
                       size={link.size || 200}
                       foregroundColor={link.foreground_color || "#000000"}
                       backgroundColor={link.background_color || "#ffffff"}

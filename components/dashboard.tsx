@@ -43,6 +43,8 @@ interface Link {
   error_correction_level?: string;
   logo_url?: string;
   logo_size?: number;
+  qr_type?: string;
+  qr_content?: string;
 }
 
 export function Dashboard() {
